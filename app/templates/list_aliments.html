@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Liste des Aliments</h1>
+    </div>
+    <p>
+        {% if aliments %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th class="text-center">Modifier</th>
+                    <th class="text-center">Supprimer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aliment in aliments %}
+                    <tr>
+                        <td><a href="{{ url_for('aff_aliment', id_aliment=aliment['id_aliment']) }}">{{ aliment['nom_aliment'] }}</a></td>
+                        <td class="text-center"><a href="{{ url_for('mod_aliment', id_aliment=aliment['id_aliment']) }}"
+                            class="btn btn-primary btn-xs" data-title="Modifier"><span class="glyphicon glyphicon-pencil"></span></a></td>
+                        <td class="text-center"><a href="{{ url_for('sup_aliment', id_aliment=aliment['id_aliment']) }}"
+                            class="btn btn-danger btn-xs" data-title="Supprimer"><span class="glyphicon glyphicon-trash"></span></a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <em>Il n'y a pas d'aliment dans la base de données</em>
+            <p>
+                Cliquer&nbsp<a href="{{ url_for('ajt_aliment') }}">ici</a>&nbsp pour en ajouter une.
+            </p>
+        {% endif %}
+    </p>
+    <a href="{{ url_for('ajt_aliment') }}" class="btn btn-default">Ajouter un aliment</a>
+    <a href="{{ url_for('index') }}" class="btn btn-default">Retour</a>
+</div>
+{% endblock %}

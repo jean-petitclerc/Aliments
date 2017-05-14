@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Aliment: {{ alim.nom_aliment }}</h1>
+    </div>
+
+    <div class = "panel panel-primary">
+        <div class = "panel-heading">
+            <h2 class = "panel-title">Description</h2>
+        </div>
+
+        <div class = "panel-body">
+            {{ alim.desc_aliment }}
+        </div>
+    </div>
+
+    <p><a href="{{ url_for('list_aliments') }}">Retour à la liste</a></p>
+</div>
+{% endblock %}
