@@ -10,6 +10,7 @@
             <thead>
                 <tr>
                     <th>Nom</th>
+                    <th>Catégorie</th>
                     <th class="text-center">Modifier</th>
                     <th class="text-center">Supprimer</th>
                 </tr>
@@ -18,6 +19,7 @@
                 {% for aliment in aliments %}
                     <tr>
                         <td><a href="{{ url_for('aff_aliment', id_aliment=aliment['id_aliment']) }}">{{ aliment['nom_aliment'] }}</a></td>
+                        <td>{{ aliment['categorie'] }}</td>
                         <td class="text-center"><a href="{{ url_for('mod_aliment', id_aliment=aliment['id_aliment']) }}"
                             class="btn btn-primary btn-xs" data-title="Modifier"><span class="glyphicon glyphicon-pencil"></span></a></td>
                         <td class="text-center"><a href="{{ url_for('sup_aliment', id_aliment=aliment['id_aliment']) }}"

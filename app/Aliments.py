@@ -162,7 +162,15 @@ def index():
 def list_aliments():
     if not logged_in():
         return redirect(url_for('login'))
-    aliments = Aliment.query.order_by(Aliment.nom_aliment).all()
+    q_aliments = Aliment.query.order_by(Aliment.nom_aliment).all()
+    aliments = []
+    for q_aliment in q_aliments:
+        aliment = {}
+        aliment['id_aliment'] = q_aliment.id_aliment
+        aliment['nom_aliment'] = q_aliment.nom_aliment
+        categ = Categorie.query.get(q_aliment.id_categorie)
+        aliment['categorie'] = categ.nom_categorie
+        aliments.append(aliment)
     return render_template('list_aliments.html', aliments=aliments)
 
 
