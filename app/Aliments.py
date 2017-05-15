@@ -2,7 +2,7 @@ from flask import Flask, session, redirect, url_for, request, render_template, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, BooleanField, SubmitField, IntegerField
+from wtforms import StringField, PasswordField, TextAreaField, BooleanField, SubmitField, IntegerField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, NumberRange  # Length, NumberRange
 from flask_script import Manager
 from flask_sqlalchemy import SQLAlchemy
@@ -48,15 +48,32 @@ class Aliment(db.Model):
     id_aliment = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     nom_aliment = db.Column(db.String(30), nullable=False, unique=True)
     desc_aliment = db.Column(db.Text, nullable=True)
+    id_categorie = db.Column(db.Integer(), db.ForeignKey('tcategorie.id_categorie'))
 
-    def __init__(self, nom_aliment, desc_aliment):
+    def __init__(self, nom_aliment, desc_aliment, id_categorie):
         self.nom_aliment = nom_aliment
         self.desc_aliment = desc_aliment
+        self.id_categorie = id_categorie
         
     def __repr__(self):
         return '<aliment: {}'.format(self.nom_aliment)
-    
-    
+
+
+class Categorie(db.Model):
+    __tablename__ = 'tcategorie'
+    id_categorie = db.Column(db.Integer(), primary_key=True, autoincrement=True)
+    nom_categorie = db.Column(db.String(30), nullable=False, unique=True)
+    desc_categorie = db.Column(db.Text, nullable=True)
+    aliments = db.relationship('Aliment', backref='tcategorie', lazy='dynamic')
+
+    def __init__(self, nom_categorie, desc_categorie):
+        self.nom_categorie = nom_categorie
+        self.desc_categorie = desc_categorie
+
+    def __repr__(self):
+        return '<catégorie: {}'.format(self.nom_categorie)
+
+
 # Formulaire web pour l'écran de login
 class LoginForm(FlaskForm):
     email = StringField('Courriel', validators=[DataRequired(), Email(message='Le courriel est invalide.')])
@@ -84,6 +101,7 @@ class RegisterForm(FlaskForm):
 class AjtAlimentForm(FlaskForm):
     nom_aliment = StringField("Nom de l'aliment", validators=[DataRequired(message='Le nom est requis.')])
     desc_aliment = TextAreaField('Description')
+    id_categorie = SelectField("Catégorie", coerce=int, validators=[DataRequired()])
     submit = SubmitField('Ajouter')
 
 
@@ -91,11 +109,31 @@ class AjtAlimentForm(FlaskForm):
 class ModAlimentForm(FlaskForm):
     nom_aliment = StringField("Nom de l'aliment", validators=[DataRequired(message='Le nom est requis.')])
     desc_aliment = TextAreaField('Description')
+    id_categorie = SelectField("Catégorie", coerce=int, validators=[DataRequired()])
     submit = SubmitField('Modifier')
 
 
 # Formulaire pour confirmer la suppression d'un aliment
 class SupAlimentForm(FlaskForm):
+    submit = SubmitField('Supprimer')
+
+
+# Formulaire d'ajout d'une catégorie
+class AjtCategorieForm(FlaskForm):
+    nom_categorie = StringField("Nom de la catégorie", validators=[DataRequired(message='Le nom est requis.')])
+    desc_categorie = TextAreaField('Description')
+    submit = SubmitField('Ajouter')
+
+
+# Formulaire de modification d'une catégorie
+class ModCategorieForm(FlaskForm):
+    nom_categorie = StringField("Nom de la catégorie", validators=[DataRequired(message='Le nom est requis.')])
+    desc_categorie = TextAreaField('Description')
+    submit = SubmitField('Modifier')
+
+
+# Formulaire pour confirmer la suppression d'un aliment
+class SupCategorieForm(FlaskForm):
     submit = SubmitField('Supprimer')
 
 
@@ -134,10 +172,14 @@ def ajt_aliment():
         return redirect(url_for('login'))
     app.logger.debug('Entering ajt_aliment')
     form = AjtAlimentForm()
+    form.id_categorie.choices = [ (c.id_categorie, c.nom_categorie)
+                                  for c in Categorie.query.order_by(Categorie.nom_categorie).all()]
     if form.validate_on_submit():
-        nom_aliment = request.form['nom_aliment']
-        desc_aliment = request.form['desc_aliment']
-        if db_ajt_aliment(nom_aliment, desc_aliment):
+        nom_aliment = form.nom_aliment.data
+        desc_aliment = form.desc_aliment.data
+        id_categorie = form.id_categorie.data
+        app.logger.debug("categorie: " + str(id_categorie))
+        if db_ajt_aliment(nom_aliment, desc_aliment, id_categorie):
             flash("L'aliment a été ajouté.")
             return redirect(url_for('list_aliments'))
         else:
@@ -152,9 +194,9 @@ def sup_aliment(id_aliment):
         return redirect(url_for('login'))
     form = SupAlimentForm()
     if form.validate_on_submit():
-        app.logger.debug('supacer un aliment')
+        app.logger.debug('effacer un aliment')
         if db_sup_aliment(id_aliment):
-            flash("L'aliment a été supacé.")
+            flash("L'aliment a été effacé.")
         else:
             flash("Quelque chose n'a pas fonctionné.")
         return redirect(url_for('list_aliments'))
@@ -173,12 +215,14 @@ def mod_aliment(id_aliment):
         return redirect(url_for('login'))
     session['id_aliment'] = id_aliment
     form = ModAlimentForm()
+    form.id_categorie.choices = [ (c.id_categorie, c.nom_categorie)
+                                  for c in Categorie.query.order_by(Categorie.nom_categorie).all()]
     if form.validate_on_submit():
         app.logger.debug('Mettre a jour aliment')
         nom_aliment = form.nom_aliment.data
         desc_aliment = form.desc_aliment.data
         if db_mod_aliment(id_aliment, nom_aliment, desc_aliment):
-            flash("L'aliment a été modifiée.")
+            flash("L'aliment a été modifié.")
         else:
             flash("Quelque chose n'a pas fonctionné.")
         return redirect(url_for('list_aliments'))
@@ -187,6 +231,7 @@ def mod_aliment(id_aliment):
         if alim:
             form.nom_aliment.data = alim.nom_aliment
             form.desc_aliment.data = alim.desc_aliment
+            form.id_categorie.data = alim.id_categorie
 #            sections = Section.query.filter_by(checklist_id=checklist_id, deleted_ind='N') \
 #                .order_by(Section.section_seq).all()
 #            cl_vars = Checklist_Var.query.filter_by(checklist_id=checklist_id).order_by(Checklist_Var.var_id).all()
@@ -207,7 +252,6 @@ def aff_aliment(id_aliment):
     alim = Aliment.query.get(id_aliment)
     if alim:
         return render_template("aff_aliment.html", alim=alim)
-
     else:
         flash("L'information n'a pas pu être retrouvée.")
         return redirect(url_for('list_aliments'))
@@ -217,9 +261,89 @@ def aff_aliment(id_aliment):
 def list_categories():
     if not logged_in():
         return redirect(url_for('login'))
-    abort(404)
-    #aliments = Aliment.query.filter_by(deleted_ind='N').order_by(Aliment.nom_aliment).all()
-    #return render_template('list_aliments.html', aliments=aliments)
+    categories = Categorie.query.order_by(Categorie.nom_categorie).all()
+    return render_template('list_categories.html', categories=categories)
+
+
+@app.route('/ajt_categorie', methods=['GET', 'POST'])
+def ajt_categorie():
+    if not logged_in():
+        return redirect(url_for('login'))
+    app.logger.debug('Entering ajt_categorie')
+    form = AjtCategorieForm()
+    if form.validate_on_submit():
+        nom_categorie = request.form['nom_categorie']
+        desc_categorie = request.form['desc_categorie']
+        if db_ajt_categorie(nom_categorie, desc_categorie):
+            flash("La catégorie a été ajoutée.")
+            return redirect(url_for('list_categories'))
+        else:
+            flash('Une erreur de base de données est survenue.')
+            abort(500)
+    return render_template('ajt_categorie.html', form=form)
+
+
+@app.route('/sup_categorie/<int:id_categorie>', methods=['GET', 'POST'])
+def sup_categorie(id_categorie):
+    if not logged_in():
+        return redirect(url_for('login'))
+    form = SupCategorieForm()
+    if form.validate_on_submit():
+        app.logger.debug('supprimer une categorie')
+        alim = Aliment.query.filter_by(id_categorie=id_categorie).first()
+        if alim:
+            flash("La catégorie ne peut pas être effacée. Il y a des aliments dans cette catégorie.")
+            return redirect(url_for('list_categories'))
+        if db_sup_categorie(id_categorie):
+            flash("La catégorie a été effacée.")
+        else:
+            flash("Quelque chose n'a pas fonctionné.")
+        return redirect(url_for('list_categories'))
+    else:
+        categ = Categorie.query.get(id_categorie)
+        if categ:
+            return render_template('sup_categorie.html', form=form, nom_categorie=categ.nom_categorie)
+        else:
+            flash("L'information n'a pas pu être retrouvée.")
+            return redirect(url_for('list_categories'))
+
+
+@app.route('/mod_categorie/<int:id_categorie>', methods=['GET', 'POST'])
+def mod_categorie(id_categorie):
+    if not logged_in():
+        return redirect(url_for('login'))
+    session['id_categorie'] = id_categorie
+    form = ModCategorieForm()
+    if form.validate_on_submit():
+        app.logger.debug('Mettre a jour categorie')
+        nom_categorie = form.nom_categorie.data
+        desc_categorie = form.desc_categorie.data
+        if db_mod_categorie(id_categorie, nom_categorie, desc_categorie):
+            flash("La categorie a été modifiée.")
+        else:
+            flash("Quelque chose n'a pas fonctionné.")
+        return redirect(url_for('list_categories'))
+    else:
+        categ = Categorie.query.get(id_categorie)
+        if categ:
+            form.nom_categorie.data = categ.nom_categorie
+            form.desc_categorie.data = categ.desc_categorie
+            return render_template("mod_categorie.html", form=form, categ=categ)
+        else:
+            flash("L'information n'a pas pu être retrouvée.")
+            return redirect(url_for('list_categories'))
+
+
+@app.route('/aff_categorie/<int:id_categorie>')
+def aff_categorie(id_categorie):
+    if not logged_in():
+        return redirect(url_for('login'))
+    categ = Categorie.query.get(id_categorie)
+    if categ:
+        return render_template("aff_categorie.html", categ=categ)
+    else:
+        flash("L'information n'a pas pu être retrouvée.")
+        return redirect(url_for('list_categories'))
 
 
 @app.route('/list_bienfaits')
@@ -336,8 +460,8 @@ def change_password(user_email, new_password):
         flash("Mot de passe changé.")
 
 
-def db_ajt_aliment(nom_aliment, desc_aliment):
-    alim = Aliment(nom_aliment, desc_aliment)
+def db_ajt_aliment(nom_aliment, desc_aliment, id_categorie):
+    alim = Aliment(nom_aliment, desc_aliment, id_categorie)
     try:
         db.session.add(alim)
         db.session.commit()
@@ -362,6 +486,40 @@ def db_mod_aliment(id_aliment, nom_aliment, desc_aliment):
     alim = Aliment.query.get(id_aliment)
     alim.nom_aliment = nom_aliment
     alim.desc_aliment = desc_aliment
+    try:
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_ajt_categorie(nom_categorie, desc_categorie):
+    categ = Categorie(nom_categorie, desc_categorie)
+    try:
+        db.session.add(categ)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_sup_categorie(id_categorie):
+    categ = Categorie.query.get(id_categorie)
+    try:
+        db.session.delete(categ)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_mod_categorie(id_categorie, nom_categorie, desc_categorie):
+    categ = Categorie.query.get(id_categorie)
+    categ.nom_categorie = nom_categorie
+    categ.desc_categorie = desc_categorie
     try:
         db.session.commit()
     except Exception as e:

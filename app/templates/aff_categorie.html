@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Catégorie: {{ categ.nom_categorie }}</h1>
+    </div>
+
+    <div class = "panel panel-primary">
+        <div class = "panel-heading">
+            <h2 class = "panel-title">Description</h2>
+        </div>
+
+        <div class = "panel-body">
+            {{ categ.desc_categorie }}
+        </div>
+    </div>
+    % if categ.aliments %}
+        <h2>Aliments dans cette catégorie</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aliment in categ.aliments %}
+                    <tr>
+                        <td>{{ aliment['nom_aliment'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <p><a href="{{ url_for('list_categories') }}">Retour à la liste</a></p>
+</div>
+{% endblock %}

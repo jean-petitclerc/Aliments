@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Liste des Catégories d'Aliments</h1>
+    </div>
+    <p>
+        {% if categories %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th class="text-center">Modifier</th>
+                    <th class="text-center">Supprimer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for categorie in categories %}
+                    <tr>
+                        <td><a href="{{ url_for('aff_categorie', id_categorie=categorie['id_categorie']) }}">{{ categorie['nom_categorie'] }}</a></td>
+                        <td class="text-center"><a href="{{ url_for('mod_categorie', id_categorie=categorie['id_categorie']) }}"
+                            class="btn btn-primary btn-xs" data-title="Modifier"><span class="glyphicon glyphicon-pencil"></span></a></td>
+                        <td class="text-center"><a href="{{ url_for('sup_categorie', id_categorie=categorie['id_categorie']) }}"
+                            class="btn btn-danger btn-xs" data-title="Supprimer"><span class="glyphicon glyphicon-trash"></span></a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <em>Il n'y a pas de catégorie d'aliment dans la base de données</em>
+            <p>
+                Cliquer&nbsp<a href="{{ url_for('ajt_categorie') }}">ici</a>&nbsp pour en ajouter une.
+            </p>
+        {% endif %}
+    </p>
+    <a href="{{ url_for('ajt_categorie') }}" class="btn btn-default">Ajouter une catégorie</a>
+    <a href="{{ url_for('index') }}" class="btn btn-default">Retour</a>
+</div>
+{% endblock %}

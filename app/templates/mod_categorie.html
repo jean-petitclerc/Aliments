@@ -18,23 +18,20 @@
 {% block page_content %}
 <div class="container">
     <div class="page-header">
-        <h1>Ajouter un Nouvel Aliment</h1>
+        <h1>Modifier une Catégorie d'Aliment</h1>
     </div>
 
     <form class="form" method="post" role="form">
         {{ form.hidden_tag() }}
         {{ wtf.form_errors(form, hiddens="only") }}
         <div class="form-group ">
-            {{ render_field(form.nom_aliment, class="form-control") }}
+            {{ render_field(form.nom_categorie, class="form-control") }}
         </div>
         <div class="form-group ">
-            {{ render_field(form.desc_aliment, class="form-control") }}
+            {{ render_field(form.desc_categorie, class="form-control") }}
         </div>
-        <div class="form-group ">
-            {{ render_field(form.id_categorie, class="form-control") }}
-        </div>
-        <input class="btn btn-default" id="submit" name="submit" type="submit" value="Ajouter">
-        <a href="{{ url_for('list_aliments') }}" class="btn btn-default">Annuler</a>
+        <input class="btn btn-default" id="submit" name="submit" type="submit" value="Modifier">
+        <a href="{{ url_for('list_categories') }}" class="btn btn-default">Annuler</a>
     </form>
 </div>
 {% endblock %}
