@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Bienfait: {{ bienfait.nom_bienfait }}</h1>
+    </div>
+
+    <div class = "panel panel-primary">
+        <div class = "panel-heading">
+            <h2 class = "panel-title">Description</h2>
+        </div>
+
+        <div class = "panel-body">
+            {{ bienfait.desc_bienfait }}
+        </div>
+    </div>
+    {% if bienfait.aliments %}
+        <h2>Aliments qui offre ce bienfait</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aliment in bienfait.aliments %}
+                    <tr>
+                        <td>{{ aliment['nom_aliment'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <p><a href="{{ url_for('list_bienfaits') }}">Retour à la liste</a></p>
+</div>
+{% endblock %}

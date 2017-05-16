@@ -74,6 +74,27 @@ class Categorie(db.Model):
         return '<catégorie: {}'.format(self.nom_categorie)
 
 
+class Bienfait(db.Model):
+    __tablename__ = 'tbienfait'
+    id_bienfait = db.Column(db.Integer(), primary_key=True, autoincrement=True)
+    nom_bienfait = db.Column(db.String(30), nullable=False, unique=True)
+    desc_bienfait = db.Column(db.Text, nullable=True)
+
+    def __init__(self, nom_bienfait, desc_bienfait):
+        self.nom_bienfait = nom_bienfait
+        self.desc_bienfait = desc_bienfait
+
+    def __repr__(self):
+        return '<bienfait: {}'.format(self.nom_bienfait)
+
+
+class AlimentBienfait(db.Model):
+    __tablename__ = 'taliment_bienfait'
+    id_m2m = db.Column(db.Integer(), primary_key=True, autoincrement=True)
+    id_aliment = db.Column(db.Integer(), nullable=False)
+    id_bienfait = db.Column(db.Integer(), nullable=False)
+
+
 # Formulaire web pour l'écran de login
 class LoginForm(FlaskForm):
     email = StringField('Courriel', validators=[DataRequired(), Email(message='Le courriel est invalide.')])
@@ -132,8 +153,27 @@ class ModCategorieForm(FlaskForm):
     submit = SubmitField('Modifier')
 
 
-# Formulaire pour confirmer la suppression d'un aliment
+# Formulaire pour confirmer la suppression d'une catégorie
 class SupCategorieForm(FlaskForm):
+    submit = SubmitField('Supprimer')
+
+
+# Formulaire d'ajout d'un bienfait
+class AjtBienfaitForm(FlaskForm):
+    nom_bienfait = StringField("Nom du bienfait", validators=[DataRequired(message='Le nom est requis.')])
+    desc_bienfait = TextAreaField('Description')
+    submit = SubmitField('Ajouter')
+
+
+# Formulaire de modification d'un bienfait
+class ModBienfaitForm(FlaskForm):
+    nom_bienfait = StringField("Nom du bienfait", validators=[DataRequired(message='Le nom est requis.')])
+    desc_bienfait = TextAreaField('Description')
+    submit = SubmitField('Modifier')
+
+
+# Formulaire pour confirmer la suppression d'un bienfait
+class SupBienfaitForm(FlaskForm):
     submit = SubmitField('Supprimer')
 
 
@@ -165,11 +205,9 @@ def list_aliments():
     q_aliments = Aliment.query.order_by(Aliment.nom_aliment).all()
     aliments = []
     for q_aliment in q_aliments:
-        aliment = {}
-        aliment['id_aliment'] = q_aliment.id_aliment
-        aliment['nom_aliment'] = q_aliment.nom_aliment
         categ = Categorie.query.get(q_aliment.id_categorie)
-        aliment['categorie'] = categ.nom_categorie
+        aliment = {'id_aliment': q_aliment.id_aliment, 'nom_aliment': q_aliment.nom_aliment,
+                   'categorie': categ.nom_categorie}
         aliments.append(aliment)
     return render_template('list_aliments.html', aliments=aliments)
 
@@ -180,8 +218,8 @@ def ajt_aliment():
         return redirect(url_for('login'))
     app.logger.debug('Entering ajt_aliment')
     form = AjtAlimentForm()
-    form.id_categorie.choices = [ (c.id_categorie, c.nom_categorie)
-                                  for c in Categorie.query.order_by(Categorie.nom_categorie).all()]
+    form.id_categorie.choices = [(c.id_categorie, c.nom_categorie)
+                                 for c in Categorie.query.order_by(Categorie.nom_categorie).all()]
     if form.validate_on_submit():
         nom_aliment = form.nom_aliment.data
         desc_aliment = form.desc_aliment.data
@@ -223,8 +261,8 @@ def mod_aliment(id_aliment):
         return redirect(url_for('login'))
     session['id_aliment'] = id_aliment
     form = ModAlimentForm()
-    form.id_categorie.choices = [ (c.id_categorie, c.nom_categorie)
-                                  for c in Categorie.query.order_by(Categorie.nom_categorie).all()]
+    form.id_categorie.choices = [(c.id_categorie, c.nom_categorie)
+                                 for c in Categorie.query.order_by(Categorie.nom_categorie).all()]
     if form.validate_on_submit():
         app.logger.debug('Mettre a jour aliment')
         nom_aliment = form.nom_aliment.data
@@ -358,7 +396,89 @@ def aff_categorie(id_categorie):
 def list_bienfaits():
     if not logged_in():
         return redirect(url_for('login'))
-    abort(404)
+    bienfaits = Bienfait.query.order_by(Bienfait.nom_bienfait).all()
+    return render_template('list_bienfaits.html', bienfaits=bienfaits)
+
+
+@app.route('/ajt_bienfait', methods=['GET', 'POST'])
+def ajt_bienfait():
+    if not logged_in():
+        return redirect(url_for('login'))
+    app.logger.debug('Entering ajt_bienfait')
+    form = AjtBienfaitForm()
+    if form.validate_on_submit():
+        nom_bienfait = form.nom_categorie.data
+        desc_bienfait = form.desc_categorie.data
+        if db_ajt_bienfait(nom_bienfait, desc_bienfait):
+            flash("Le bienfait a été ajouté.")
+            return redirect(url_for('list_bienfaits'))
+        else:
+            flash('Une erreur de base de données est survenue.')
+            abort(500)
+    return render_template('ajt_bienfait.html', form=form)
+
+
+@app.route('/sup_bienfait/<int:id_bienfait>', methods=['GET', 'POST'])
+def sup_bienfait(id_bienfait):
+    if not logged_in():
+        return redirect(url_for('login'))
+    form = SupBienfaitForm()
+    if form.validate_on_submit():
+        app.logger.debug('supprimer un bienfait')
+        alim = AlimentBienfait.query.filter_by(id_bienfait=id_bienfait).first()
+        if alim:
+            flash("Le bienfait ne peut pas être effacé. Il y a des aliments qui ont ce bienfait.")
+            return redirect(url_for('list_bienfaits'))
+        if db_sup_bienfait(id_bienfait):
+            flash("La catégorie a été effacée.")
+        else:
+            flash("Quelque chose n'a pas fonctionné.")
+        return redirect(url_for('list_bienfaits'))
+    else:
+        bienfait = Bienfait.query.get(id_bienfait)
+        if bienfait:
+            return render_template('sup_bienfait.html', form=form, nom_bienfait=bienfait.nom_bienfait)
+        else:
+            flash("L'information n'a pas pu être retrouvée.")
+            return redirect(url_for('list_bienfaits'))
+
+
+@app.route('/mod_bienfait/<int:id_bienfait>', methods=['GET', 'POST'])
+def mod_bienfait(id_bienfait):
+    if not logged_in():
+        return redirect(url_for('login'))
+    session['id_bienfait'] = id_bienfait
+    form = ModBienfaitForm()
+    if form.validate_on_submit():
+        app.logger.debug('Mettre a jour bienfait')
+        nom_bienfait = form.nom_bienfait.data
+        desc_bienfait = form.desc_bienfait.data
+        if db_mod_bienfait(id_bienfait, nom_bienfait, desc_bienfait):
+            flash("Le bienfait a été modifié.")
+        else:
+            flash("Quelque chose n'a pas fonctionné.")
+        return redirect(url_for('list_bienfaits'))
+    else:
+        bienfait = Bienfait.query.get(id_bienfait)
+        if bienfait:
+            form.nom_bienfait.data = bienfait.nom_bienfait
+            form.desc_bienfait.data = bienfait.desc_bienfait
+            return render_template("mod_bienfait.html", form=form, bienfait=bienfait)
+        else:
+            flash("L'information n'a pas pu être retrouvée.")
+            return redirect(url_for('list_bienfaits'))
+
+
+@app.route('/aff_bienfait/<int:id_bienfait>')
+def aff_bienfait(id_bienfait):
+    if not logged_in():
+        return redirect(url_for('login'))
+    bienfait = Bienfait.query.get(id_bienfait)
+    if bienfait:
+        return render_template("aff_bienfait.html", bienfait=bienfait)
+    else:
+        flash("L'information n'a pas pu être retrouvée.")
+        return redirect(url_for('list_bienfaits'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -528,6 +648,40 @@ def db_mod_categorie(id_categorie, nom_categorie, desc_categorie):
     categ = Categorie.query.get(id_categorie)
     categ.nom_categorie = nom_categorie
     categ.desc_categorie = desc_categorie
+    try:
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_ajt_bienfait(nom_bienfait, desc_bienfait):
+    bienfait = Bienfait(nom_bienfait, desc_bienfait)
+    try:
+        db.session.add(bienfait)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_sup_bienfait(id_bienfait):
+    bienfait = Bienfait.query.get(id_bienfait)
+    try:
+        db.session.delete(bienfait)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_mod_bienfait(id_bienfait, nom_bienfait, desc_bienfait):
+    bienfait = Bienfait.query.get(id_bienfait)
+    bienfait.nom_bienfait = nom_bienfait
+    bienfait.desc_bienfait = desc_bienfait
     try:
         db.session.commit()
     except Exception as e:

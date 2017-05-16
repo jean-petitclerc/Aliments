@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Liste des Bienfaits</h1>
+    </div>
+    <p>
+        {% if bienfaits %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th class="text-center">Modifier</th>
+                    <th class="text-center">Supprimer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bienfait in bienfaits %}
+                    <tr>
+                        <td><a href="{{ url_for('aff_bienfait', id_bienfait=bienfait['id_bienfait']) }}">{{ bienfait['nom_bienfait'] }}</a></td>
+                        <td class="text-center"><a href="{{ url_for('mod_bienfait', id_bienfait=bienfait['id_bienfait']) }}"
+                            class="btn btn-primary btn-xs" data-title="Modifier"><span class="glyphicon glyphicon-pencil"></span></a></td>
+                        <td class="text-center"><a href="{{ url_for('sup_bienfait', id_bienfait=bienfait['id_bienfait']) }}"
+                            class="btn btn-danger btn-xs" data-title="Supprimer"><span class="glyphicon glyphicon-trash"></span></a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <em>Il n'y a pas de bienfait dans la base de données</em>
+            <p>
+                Cliquer&nbsp<a href="{{ url_for('ajt_bienfait') }}">ici</a>&nbsp pour en ajouter une.
+            </p>
+        {% endif %}
+    </p>
+    <a href="{{ url_for('ajt_bienfait') }}" class="btn btn-default">Ajouter un bienfait</a>
+    <a href="{{ url_for('index') }}" class="btn btn-default">Retour</a>
+</div>
+{% endblock %}
