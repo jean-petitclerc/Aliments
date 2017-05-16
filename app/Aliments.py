@@ -407,8 +407,8 @@ def ajt_bienfait():
     app.logger.debug('Entering ajt_bienfait')
     form = AjtBienfaitForm()
     if form.validate_on_submit():
-        nom_bienfait = form.nom_categorie.data
-        desc_bienfait = form.desc_categorie.data
+        nom_bienfait = form.nom_bienfait.data
+        desc_bienfait = form.desc_bienfait.data
         if db_ajt_bienfait(nom_bienfait, desc_bienfait):
             flash("Le bienfait a été ajouté.")
             return redirect(url_for('list_bienfaits'))
