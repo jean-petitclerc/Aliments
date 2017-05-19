@@ -49,6 +49,7 @@ class Aliment(db.Model):
     nom_aliment = db.Column(db.String(30), nullable=False, unique=True)
     desc_aliment = db.Column(db.Text, nullable=True)
     id_categorie = db.Column(db.Integer(), db.ForeignKey('tcategorie.id_categorie'))
+    bienfaits = db.relationship('AlimentBienfait', backref='taliment', lazy='dynamic')
 
     def __init__(self, nom_aliment, desc_aliment, id_categorie):
         self.nom_aliment = nom_aliment
@@ -79,6 +80,7 @@ class Bienfait(db.Model):
     id_bienfait = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     nom_bienfait = db.Column(db.String(30), nullable=False, unique=True)
     desc_bienfait = db.Column(db.Text, nullable=True)
+    aliments = db.relationship('AlimentBienfait', backref='tbienfait', lazy='dynamic')
 
     def __init__(self, nom_bienfait, desc_bienfait):
         self.nom_bienfait = nom_bienfait
@@ -91,8 +93,15 @@ class Bienfait(db.Model):
 class AlimentBienfait(db.Model):
     __tablename__ = 'taliment_bienfait'
     id_m2m = db.Column(db.Integer(), primary_key=True, autoincrement=True)
-    id_aliment = db.Column(db.Integer(), nullable=False)
-    id_bienfait = db.Column(db.Integer(), nullable=False)
+    id_aliment = db.Column(db.Integer(), db.ForeignKey('taliment.id_aliment'), nullable=False)
+    id_bienfait = db.Column(db.Integer(), db.ForeignKey('tbienfait.id_bienfait'), nullable=False)
+
+    def __init__(self, id_aliment, id_bienfait):
+        self.id_aliment = id_aliment
+        self.id_bienfait = id_bienfait
+
+    def __repr__(self):
+        return '<aliment/bienfait: {}'.format(self.id_m2m)
 
 
 # Formulaire web pour l'écran de login
@@ -278,14 +287,12 @@ def mod_aliment(id_aliment):
             form.nom_aliment.data = alim.nom_aliment
             form.desc_aliment.data = alim.desc_aliment
             form.id_categorie.data = alim.id_categorie
-#            sections = Section.query.filter_by(checklist_id=checklist_id, deleted_ind='N') \
-#                .order_by(Section.section_seq).all()
-#            cl_vars = Checklist_Var.query.filter_by(checklist_id=checklist_id).order_by(Checklist_Var.var_id).all()
-#            for cl_v in cl_vars:
-#                pr_v = Predef_Var.query.get(cl_v.var_id)
-#                cl_v.var_name = pr_v.var_name
-#                cl_v.var_desc = pr_v.var_desc
-            return render_template("mod_aliment.html", form=form, alim=alim)
+            bienfaits = AlimentBienfait.query.filter_by(id_aliment=id_aliment) \
+                .order_by(AlimentBienfait.id_bienfait).all()
+            for bienfait in bienfaits:
+                b = Bienfait.query.get(bienfait.id_bienfait)
+                bienfait.nom_bienfait = b.nom_bienfait
+            return render_template("mod_aliment.html", form=form, alim=alim, bienfaits=bienfaits)
         else:
             flash("L'information n'a pas pu être retrouvée.")
             return redirect(url_for('list_aliments'))
@@ -479,6 +486,43 @@ def aff_bienfait(id_bienfait):
     else:
         flash("L'information n'a pas pu être retrouvée.")
         return redirect(url_for('list_bienfaits'))
+
+
+@app.route('/sel_alim_bienfait/<int:id_aliment>')
+def sel_alim_bienfait(id_aliment):
+    if not logged_in():
+        return redirect(url_for('login'))
+    l_bienfaits = Bienfait.query.order_by(Bienfait.nom_bienfait).all()
+    s_bienfaits = []
+    for bf in l_bienfaits:
+        a_bf = AlimentBienfait.query.filter_by(id_aliment=id_aliment, id_bienfait=bf.id_bienfait).first()
+        if a_bf is None:
+            s_bienfaits.append(bf)
+    return render_template('sel_alim_bienfait.html', id_aliment=id_aliment, s_bienfaits=s_bienfaits)
+
+
+@app.route('/ajt_alim_bienfait/<int:id_aliment>/<int:id_bienfait>')
+def ajt_alim_bienfait(id_aliment, id_bienfait):
+    if not logged_in():
+        return redirect(url_for('login'))
+    if db_ajt_alim_bienfait(id_aliment, id_bienfait):
+        flash("Le nouveau bienfait est ajouté à l'aliment.")
+    else:
+        flash('Une erreur de base de données est survenue.')
+        abort(500)
+    return redirect(url_for('mod_aliment', id_aliment=id_aliment))
+
+
+@app.route('/sup_alim_bienfait/<int:id_aliment>/<int:id_bienfait>')
+def sup_alim_bienfait(id_aliment, id_bienfait):
+    if not logged_in():
+        return redirect(url_for('login'))
+    if db_sup_alim_bienfait(id_aliment, id_bienfait):
+        flash("Le bienfait a été enlevé.")
+    else:
+        flash('Une erreur de base de données est survenue.')
+        abort(500)
+    return redirect(url_for('mod_aliment', id_aliment=id_aliment))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -683,6 +727,28 @@ def db_mod_bienfait(id_bienfait, nom_bienfait, desc_bienfait):
     bienfait.nom_bienfait = nom_bienfait
     bienfait.desc_bienfait = desc_bienfait
     try:
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_ajt_alim_bienfait(id_aliment, id_bienfait):
+    al_bf = AlimentBienfait(id_aliment, id_bienfait)
+    try:
+        db.session.add(al_bf)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error('DB Error' + str(e))
+        return False
+    return True
+
+
+def db_sup_alim_bienfait(id_aliment, id_bienfait):
+    al_bf = AlimentBienfait.query.filter_by(id_aliment=id_aliment, id_bienfait=id_bienfait).first()
+    try:
+        db.session.delete(al_bf)
         db.session.commit()
     except Exception as e:
         app.logger.error('DB Error' + str(e))
