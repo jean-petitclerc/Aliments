@@ -4,16 +4,17 @@
     <div class="page-header">
         <h1>Catégorie: {{ categ.nom_categorie }}</h1>
     </div>
+    {% if categ.desc_categorie %}
+        <div class = "panel panel-primary">
+            <div class = "panel-heading">
+                <h2 class = "panel-title">Description</h2>
+            </div>
 
-    <div class = "panel panel-primary">
-        <div class = "panel-heading">
-            <h2 class = "panel-title">Description</h2>
+            <div class = "panel-body">
+                {{ categ.desc_categorie }}
+            </div>
         </div>
-
-        <div class = "panel-body">
-            {{ categ.desc_categorie }}
-        </div>
-    </div>
+    {% endif %}
     {% if categ.aliments %}
         <h2>Aliments dans cette catégorie</h2>
         <table class="table table-bordered">

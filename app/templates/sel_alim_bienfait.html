@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Liste des bienfaits disponibles</h1>
+    </div>
+    <p>
+        {% if s_bienfaits %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th class="text-center">Ajouter</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s_bienfait in s_bienfaits %}
+                    <tr>
+                        <td>{{ s_bienfait['nom_bienfait'] }}</td>
+                        <td class="text-center"><a href="{{ url_for('ajt_alim_bienfait', id_aliment=id_aliment, id_bienfait=s_bienfait['id_bienfait']) }}"
+                            class="btn btn-primary btn-xs" data-title="Ajouter"><span class="glyphicon glyphicon-plus"></span></a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <em>Il n'y a pas de bienfait dans la base de données</em>
+            <p>
+                Cliquer&nbsp<a href="{{ url_for('ajt_bienfait') }}">ici</a>&nbsp pour en ajouter un.
+            </p>
+        {% endif %}
+    </p>
+    <a href="{{ url_for('mod_aliment', id_aliment=id_aliment) }}" class="btn btn-default">Retour</a>
+</div>
+{% endblock %}

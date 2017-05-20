@@ -4,16 +4,34 @@
     <div class="page-header">
         <h1>Aliment: {{ alim.nom_aliment }}</h1>
     </div>
+    {% if alim.desc_aliment %}
+        <div class = "panel panel-primary">
+            <div class = "panel-heading">
+                <h2 class = "panel-title">Description</h2>
+            </div>
 
-    <div class = "panel panel-primary">
-        <div class = "panel-heading">
-            <h2 class = "panel-title">Description</h2>
+            <div class = "panel-body">
+                {{ alim.desc_aliment }}
+            </div>
         </div>
-
-        <div class = "panel-body">
-            {{ alim.desc_aliment }}
-        </div>
-    </div>
+    {% endif %}
+    {% if bienfaits %}
+        <h2>Bienfaits</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bienfait in bienfaits %}
+                    <tr>
+                        <td>{{ bienfait['nom_bienfait'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 
     <p><a href="{{ url_for('list_aliments') }}">Retour à la liste</a></p>
 </div>

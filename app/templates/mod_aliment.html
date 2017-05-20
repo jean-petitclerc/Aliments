@@ -36,5 +36,37 @@
         <input class="btn btn-default" id="submit" name="submit" type="submit" value="Modifier">
         <a href="{{ url_for('list_aliments') }}" class="btn btn-default">Annuler</a>
     </form>
+        <p>
+        <h2>Bienfaits</h2>
+        {% if bienfaits %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th class="text-center">Supprimer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bienfait in bienfaits %}
+                        <tr>
+                            <td>{{ bienfait['nom_bienfait'] }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('sup_alim_bienfait', id_aliment=alim.id_aliment, id_bienfait=bienfait['id_bienfait']) }}"
+                                   class="btn btn-danger btn-xs"  data-title="Supprimer">
+                                   <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <em>Il n'y a pas de bienfait dans cette liste.</em>
+            <p>
+                Cliquer&nbsp<a href="{{ url_for('sel_alim_bienfait', id_aliment=alim.id_aliment) }}">ici</a>&nbsp pour en ajouter un.
+            </p>
+        {% endif %}
+    </p>
+    <a href="{{ url_for('list_aliments') }}" class="btn btn-default">Retour à la liste</a>
 </div>
 {% endblock %}

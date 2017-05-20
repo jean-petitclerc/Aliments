@@ -304,7 +304,12 @@ def aff_aliment(id_aliment):
         return redirect(url_for('login'))
     alim = Aliment.query.get(id_aliment)
     if alim:
-        return render_template("aff_aliment.html", alim=alim)
+        bienfaits = AlimentBienfait.query.filter_by(id_aliment=id_aliment) \
+            .order_by(AlimentBienfait.id_bienfait).all()
+        for bienfait in bienfaits:
+            b = Bienfait.query.get(bienfait.id_bienfait)
+            bienfait.nom_bienfait = b.nom_bienfait
+        return render_template("aff_aliment.html", alim=alim, bienfaits=bienfaits)
     else:
         flash("L'information n'a pas pu être retrouvée.")
         return redirect(url_for('list_aliments'))
@@ -482,7 +487,11 @@ def aff_bienfait(id_bienfait):
         return redirect(url_for('login'))
     bienfait = Bienfait.query.get(id_bienfait)
     if bienfait:
-        return render_template("aff_bienfait.html", bienfait=bienfait)
+        aliments = AlimentBienfait.query.filter_by(id_bienfait=id_bienfait).order_by(AlimentBienfait.id_aliment).all()
+        for aliment in aliments:
+            a = Aliment.query.get(aliment.id_aliment)
+            aliment.nom_aliment = a.nom_aliment
+        return render_template("aff_bienfait.html", bienfait=bienfait, aliments=aliments)
     else:
         flash("L'information n'a pas pu être retrouvée.")
         return redirect(url_for('list_bienfaits'))
