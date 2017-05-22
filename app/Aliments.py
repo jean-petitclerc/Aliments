@@ -655,6 +655,8 @@ def db_ajt_aliment(nom_aliment, desc_aliment, id_categorie):
 def db_sup_aliment(id_aliment):
     alim = Aliment.query.get(id_aliment)
     try:
+        for bienfait in alim.bienfaits:
+            db.session.delete(bienfait)
         db.session.delete(alim)
         db.session.commit()
     except Exception as e:
