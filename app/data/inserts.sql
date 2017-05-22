@@ -1,5 +1,7 @@
 INSERT INTO "tadmin_user" VALUES(1,'Jean','Petitclerc','jean.petitclerc@groupepp.com','pbkdf2:sha256:50000$qkSVSoRT$685b2a121a6651f0bc7cfe7f6a6e023bd1a5e7443a2b0de651c11d24941365ca',1);
 
+-- Les catégories ont été prises de ce document: http://campus.cerimes.fr/nutrition/enseignement/nutrition_4/site/html/cours.pdf
+-- (C) Université Médicale Virtuelle Francophone
 INSERT INTO "tcategorie" VALUES(1,'Fruits','La composition des fruits est semblable à celle des légumes. Leur teneur en glucides est cependant plus élevée. Il s’agit le plus souvent de sucres (de fructose mais aussi de
 saccharose ou de glucose et plus rarement d’amidon (banane, châtaigne). L’apport en sucres est très variable. Il est peu important pour les agrumes, les groseilles, les fraises, les framboises, les mûres, le melon et la pastèque (5 à 10 %). Les fruits les plus riches en sucres sont le raisin, la banane (18 à 20 %).
 Un fruit apporte généralement 15 à 20 g de glucides.
